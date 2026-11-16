@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "Colégio Sanquim | Login e perfis",
+    "description": "Defina senhaDemo com o mesmo valor de SANQUIM_DEMO_PASSWORD e execute em ordem.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "senhaDemo",
+      "value": ""
+    },
+    {
+      "key": "tokenAluno",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Login de Gestão",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Login de Gestão retorna 200\", () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) {",
+              "    const login = pm.response.json();",
+              "    pm.test(\"Perfil correto\", () => pm.expect(login.role).to.eql(\"ROLE_GESTAO\"));",
+              "    pm.test(\"Token com validade\", () => {",
+              "        pm.expect(login.token).to.be.a('string').and.not.empty;",
+              "        pm.expect(Date.parse(login.expiraEm)).to.be.greaterThan(Date.now());",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login de Professor",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"professor1@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Login de Professor retorna 200\", () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) {",
+              "    const login = pm.response.json();",
+              "    pm.test(\"Perfil correto\", () => pm.expect(login.role).to.eql(\"ROLE_PROFESSOR\"));",
+              "    pm.test(\"Token com validade\", () => {",
+              "        pm.expect(login.token).to.be.a('string').and.not.empty;",
+              "        pm.expect(Date.parse(login.expiraEm)).to.be.greaterThan(Date.now());",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login de Aluno",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"aluno1@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.unset(\"tokenAluno\");",
+              "pm.test(\"Login de Aluno retorna 200\", () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) {",
+              "    const login = pm.response.json();",
+              "    pm.test(\"Perfil correto\", () => pm.expect(login.role).to.eql(\"ROLE_ALUNO\"));",
+              "    pm.test(\"Token com validade\", () => {",
+              "        pm.expect(login.token).to.be.a('string').and.not.empty;",
+              "        pm.expect(Date.parse(login.expiraEm)).to.be.greaterThan(Date.now());",
+              "    });",
+              "    pm.collectionVariables.set(\"tokenAluno\", login.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Aluno tenta registrar chamada",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tokenAluno}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/diario/chamada"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Aluno recebe 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"Erro em JSON\", () => pm.expect(pm.response.json().status).to.eql(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Boletim sem token",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [],
+        "url": "{{baseUrl}}/api/aluno/boletim"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Sem token recebe 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
