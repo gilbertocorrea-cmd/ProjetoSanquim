@@ -2,6 +2,7 @@ package com.lab.projetosanquim.exception;
 
 import com.lab.projetosanquim.dto.ErroResponse;
 import com.lab.projetosanquim.dto.ErroResponse.CampoInvalido;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -40,6 +41,24 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErroResponse acessoNegado() {
         return new ErroResponse(403, "Acesso negado para este perfil");
+    }
+
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErroResponse recursoNaoEncontrado(RecursoNaoEncontradoException exception) {
+        return new ErroResponse(404, exception.getMessage());
+    }
+
+    @ExceptionHandler(RegraNegocioException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErroResponse regraNegocio(RegraNegocioException exception) {
+        return new ErroResponse(409, exception.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErroResponse conflitoDeDados() {
+        return new ErroResponse(409, "Conflito com os dados cadastrados. Verifique e-mails e vínculos duplicados");
     }
 
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})

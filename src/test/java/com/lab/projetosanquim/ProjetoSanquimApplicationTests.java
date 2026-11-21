@@ -56,7 +56,7 @@ class ProjetoSanquimApplicationTests {
 
     @ParameterizedTest
     @CsvSource({
-            "admin@sanquim.br, ROLE_GESTAO, 404, 404, 403",
+            "admin@sanquim.br, ROLE_GESTAO, 200, 404, 403",
             "professor1@sanquim.br, ROLE_PROFESSOR, 403, 404, 403",
             "aluno1@sanquim.br, ROLE_ALUNO, 403, 403, 404"
     })
@@ -78,7 +78,7 @@ class ProjetoSanquimApplicationTests {
         assertThat(login.expiraEm()).isAfter(Instant.now());
         assertThat(JWT.decode(login.token()).getExpiresAtAsInstant()).isEqualTo(login.expiraEm());
 
-        // Os controllers acadêmicos ainda não existem, então uma requisição autorizada chega ao 404.
+        // O diário e o boletim serão implementados nas próximas etapas.
         verificaAcesso("/api/admin/alunos", login.token(), adminStatus);
         verificaAcesso("/api/diario/minhas-turmas", login.token(), diarioStatus);
         verificaAcesso("/api/aluno/boletim", login.token(), alunoStatus);
@@ -150,8 +150,10 @@ class ProjetoSanquimApplicationTests {
     }
 
     private void verificaAcesso(String rota, String token, int esperado) throws Exception {
-        mvc.perform(get(rota).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
-                .andExpect(status().is(esperado))
-                .andExpect(jsonPath("$.status").value(esperado));
+        var resultado = mvc.perform(get(rota).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().is(esperado));
+        if (esperado != 200) {
+            resultado.andExpect(jsonPath("$.status").value(esperado));
+        }
     }
 }
