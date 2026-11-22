@@ -23,7 +23,13 @@ public class JwtService {
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
 
-    public JwtService(@Value("${SANQUIM_JWT_SECRET:}") String segredoBase64) {
+    public JwtService(
+            @Value("${sanquim.jwt.secret:${SANQUIM_JWT_SECRET:}}") String segredoBase64,
+            @Value("${sanquim.jwt.require-secret:false}") boolean exigeSegredo
+    ) {
+        if (exigeSegredo && segredoBase64.isBlank()) {
+            throw new IllegalArgumentException("SANQUIM_JWT_SECRET é obrigatório no perfil prod");
+        }
         byte[] chave = new byte[CHAVE_MINIMA_BYTES];
         if (segredoBase64.isBlank()) {
             new SecureRandom().nextBytes(chave);

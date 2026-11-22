@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Colegio Sanquim | Login e Gestao",
+    "name": "Colegio Sanquim | API REST",
     "description": "Defina senhaDemo com a senha das contas de demonstracao. A pasta Gestao cria dados novos em cada execucao.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -39,6 +39,38 @@
     },
     {
       "key": "rodada",
+      "value": ""
+    },
+    {
+      "key": "limiteRodada",
+      "value": ""
+    },
+    {
+      "key": "tokenProfessor",
+      "value": ""
+    },
+    {
+      "key": "avaliacaoId",
+      "value": ""
+    },
+    {
+      "key": "notaId",
+      "value": ""
+    },
+    {
+      "key": "tokenConsultaAluno",
+      "value": ""
+    },
+    {
+      "key": "tokenConsultaProfessor",
+      "value": ""
+    },
+    {
+      "key": "tokenConsultaGestao",
+      "value": ""
+    },
+    {
+      "key": "alunoConsultaId",
       "value": ""
     }
   ],
@@ -458,7 +490,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/professores"
+            "url": "{{baseUrl}}/api/admin/professores?page=0&size=20"
           },
           "event": [
             {
@@ -466,7 +498,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -477,7 +510,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/alunos"
+            "url": "{{baseUrl}}/api/admin/alunos?page=0&size=20"
           },
           "event": [
             {
@@ -485,7 +518,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -496,7 +530,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/turmas"
+            "url": "{{baseUrl}}/api/admin/turmas?page=0&size=20"
           },
           "event": [
             {
@@ -504,7 +538,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -515,7 +550,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/disciplinas"
+            "url": "{{baseUrl}}/api/admin/disciplinas?page=0&size=20"
           },
           "event": [
             {
@@ -523,7 +558,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -534,7 +570,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/matriculas"
+            "url": "{{baseUrl}}/api/admin/matriculas?page=0&size=20"
           },
           "event": [
             {
@@ -542,7 +578,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -553,7 +590,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/admin/atribuicoes"
+            "url": "{{baseUrl}}/api/admin/atribuicoes?page=0&size=20"
           },
           "event": [
             {
@@ -561,7 +598,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));"
+                  "pm.test(\"Status esperado 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Conteudo paginado\", () => { const p = pm.response.json(); pm.expect(p.conteudo).to.be.an(\"array\"); pm.expect(p.pagina).to.eql(0); pm.expect(p.tamanho).to.eql(20); });"
                 ]
               }
             }
@@ -590,6 +628,971 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status esperado 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Senha acima de 72 bytes retorna 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/alunos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nome\": \"Senha longa\", \"email\": \"senha.longa@sanquim.br\", \"senha\": \"ééééééééééééééééééééééééééééééééééééé\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Campo senha invalido\", () => pm.expect(pm.response.json().camposInvalidos.map(c => c.campo)).to.include(\"senha\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Limite de login",
+      "item": [
+        {
+          "name": "Tentativa 1",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"limiteRodada\", String(Date.now()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tentativa 2",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tentativa 3",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tentativa 4",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tentativa 5",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tentativa 6",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"limite.{{limiteRodada}}@sanquim.br\", \"senha\": \"incorreta\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 429\", () => pm.response.to.have.status(429));",
+                  "pm.test(\"Retry-After presente\", () => pm.expect(Number(pm.response.headers.get(\"Retry-After\"))).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Diário de Classe",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{tokenProfessor}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Login do Professor criado em Gestao",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"professor.{{rodada}}@sanquim.br\",\n  \"senha\": \"SenhaTeste123!\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"tokenProfessor\", pm.response.json().token);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "for (const key of [\"tokenProfessor\", \"avaliacaoId\", \"notaId\"]) pm.collectionVariables.unset(key);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Minhas turmas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/diario/minhas-turmas",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar chamada",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/chamada",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"registros\": [\n    {\n      \"alunoId\": {{alunoId}},\n      \"presente\": true\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chamada duplicada retorna 409",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/chamada",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"registros\": [\n    {\n      \"alunoId\": {{alunoId}},\n      \"presente\": true\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar avaliacao",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/avaliacoes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"titulo\": \"Prova 1\",\n  \"tipo\": \"PROVA\",\n  \"notaMaxima\": 10,\n  \"peso\": 1,\n  \"dataEntrega\": \"2026-11-10\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"avaliacaoId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lancar nota",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/avaliacoes/{{avaliacaoId}}/notas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": {{alunoId}},\n  \"valor\": 8\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"notaId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar nota",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/avaliacoes/{{avaliacaoId}}/notas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": {{alunoId}},\n  \"valor\": 9\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Mesmo ID da nota\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"notaId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nota acima da maxima retorna 409",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/avaliacoes/{{avaliacaoId}}/notas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": {{alunoId}},\n  \"valor\": 11\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar plano de aula",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/planos-aula",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"topicos\": \"Equacoes do primeiro grau\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aluno",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{tokenConsultaAluno}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Login do aluno 1",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aluno1@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"tokenConsultaAluno\", pm.response.json().token);",
+                  "pm.test(\"Perfil correto\", () => pm.expect(pm.response.json().role).to.eql(\"ROLE_ALUNO\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset(\"tokenConsultaAluno\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Boletim do aluno autenticado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/boletim",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Boletim em DTO\", () => pm.expect(pm.response.json().disciplinas).to.be.an(\"array\"));",
+                  "pm.collectionVariables.set(\"alunoConsultaId\", pm.response.json().alunoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Frequencia do aluno autenticado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/frequencia",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Mesmo aluno do token\", () => pm.expect(String(pm.response.json().alunoId)).to.eql(String(pm.collectionVariables.get(\"alunoConsultaId\"))));",
+                  "pm.test(\"Totais coerentes\", () => { const f = pm.response.json(); pm.expect(f.presencas + f.faltas).to.eql(f.aulasRegistradas); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aulas do aluno autenticado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/aulas",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Lista de aulas\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login do aluno 2",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aluno2@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"tokenConsultaAluno\", pm.response.json().token);",
+                  "pm.test(\"Perfil correto\", () => pm.expect(pm.response.json().role).to.eql(\"ROLE_ALUNO\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset(\"tokenConsultaAluno\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Boletim do aluno 2",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/boletim",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Aluno distinto\", () => pm.expect(String(pm.response.json().alunoId)).not.to.eql(String(pm.collectionVariables.get(\"alunoConsultaId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login de Professor",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"professor1@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"tokenConsultaProfessor\", pm.response.json().token);",
+                  "pm.test(\"Perfil correto\", () => pm.expect(pm.response.json().role).to.eql(\"ROLE_PROFESSOR\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset(\"tokenConsultaProfessor\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Professor recebe 403 em boletim",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/boletim",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaProfessor}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Professor recebe 403 em frequencia",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/frequencia",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaProfessor}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Professor recebe 403 em aulas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/aulas",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaProfessor}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login de Gestao",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sanquim.br\",\n  \"senha\": \"{{senhaDemo}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"tokenConsultaGestao\", pm.response.json().token);",
+                  "pm.test(\"Perfil correto\", () => pm.expect(pm.response.json().role).to.eql(\"ROLE_GESTAO\"));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset(\"tokenConsultaGestao\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gestao recebe 403 em boletim",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/boletim",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaGestao}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gestao recebe 403 em frequencia",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/frequencia",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaGestao}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gestao recebe 403 em aulas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/aulas",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenConsultaGestao}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sem token recebe 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/aluno/boletim",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
                 ]
               }
             }

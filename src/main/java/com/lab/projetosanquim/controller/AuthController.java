@@ -5,6 +5,7 @@ import com.lab.projetosanquim.dto.LoginResponse;
 import com.lab.projetosanquim.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,9 +24,9 @@ public class AuthController {
 
     @Operation(summary = "Autentica por e-mail e senha e emite um token JWT")
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(authService.login(request));
+                .body(authService.login(request, servletRequest.getRemoteAddr()));
     }
 }

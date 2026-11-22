@@ -9,4 +9,5 @@ public interface AtribuicaoDocenteRepository extends JpaRepository<AtribuicaoDoc
     boolean existsByProfessorIdAndTurmaIdAndDisciplinaId(Long professorId, Long turmaId, Long disciplinaId);
 
     List<AtribuicaoDocente> findByProfessor(Professor professor);
+    List<AtribuicaoDocente> findByProfessorOrderByTurmaIdAscDisciplinaIdAsc(Professor professor);
 }

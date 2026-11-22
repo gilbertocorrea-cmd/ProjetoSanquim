@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.show-sql=false",
-        "sanquim.demo.seed=true",
+        "sanquim.demo.seed=false",
         "SANQUIM_DEMO_PASSWORD=" + ProjetoSanquimApplicationTests.SENHA_TESTE,
         "SANQUIM_JWT_SECRET=" + ProjetoSanquimApplicationTests.CHAVE_TESTE
 })
@@ -77,8 +77,8 @@ class AdminControllerTests {
 
         mvc.perform(get("/api/admin/" + recurso).with(user("gestao").roles("GESTAO")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.email == 'novo@sanquim.br')]").isNotEmpty())
-                .andExpect(jsonPath("$[*].senhaHash").isEmpty());
+                .andExpect(jsonPath("$.conteudo[?(@.email == 'novo@sanquim.br')]").isNotEmpty())
+                .andExpect(jsonPath("$.conteudo[*].senhaHash").isEmpty());
 
         long quantidade = usuarios.count();
         mvc.perform(post("/api/admin/alunos").with(user("gestao").roles("GESTAO"))
@@ -160,6 +160,81 @@ class AdminControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/admin/alunos'].post.security[0].bearerAuth").isArray())
                 .andExpect(jsonPath("$.paths['/api/admin/matriculas'].post.responses['201']").exists());
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "gestores", "professores", "alunos", "turmas", "disciplinas", "matriculas", "atribuicoes"
+    })
+    void todasAsListagensUsamRespostaPaginada(String recurso) throws Exception {
+        mvc.perform(get("/api/admin/" + recurso).with(user("gestao").roles("GESTAO")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isArray())
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(20))
+                .andExpect(jsonPath("$.totalElementos").isNumber())
+                .andExpect(jsonPath("$.totalPaginas").isNumber())
+                .andExpect(jsonPath("$.pageable").doesNotExist());
+    }
+
+    @Test
+    void paginacaoOrdenaPorIdIgnoraSortEInformaTotais() throws Exception {
+        long primeiro = cadastrar("turmas", Map.of(
+                "nome", "Z", "anoLetivo", 2026, "ativa", true)).get("id").asLong();
+        long segundo = cadastrar("turmas", Map.of(
+                "nome", "A", "anoLetivo", 2026, "ativa", true)).get("id").asLong();
+        cadastrar("turmas", Map.of("nome", "B", "anoLetivo", 2026, "ativa", true));
+        mvc.perform(get("/api/admin/turmas").with(user("gestao").roles("GESTAO"))
+                        .param("page", "0").param("size", "2").param("sort", "nome,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[0].id").value(primeiro))
+                .andExpect(jsonPath("$.conteudo[1].id").value(segundo))
+                .andExpect(jsonPath("$.totalElementos").value(3))
+                .andExpect(jsonPath("$.totalPaginas").value(2));
+        mvc.perform(get("/api/admin/turmas").with(user("gestao").roles("GESTAO"))
+                        .param("page", "1").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pagina").value(1))
+                .andExpect(jsonPath("$.conteudo.length()").value(1));
+        mvc.perform(get("/api/admin/turmas").with(user("gestao").roles("GESTAO"))
+                        .param("page", "2").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isEmpty());
+        mvc.perform(get("/api/admin/turmas").with(user("gestao").roles("GESTAO")).param("size", "100"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.tamanho").value(100));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "page|-1", "page|abc", "page|2147483648", "page|2147483647",
+            "page|", "size|0", "size|-1", "size|101", "size|abc", "size|"
+    }, delimiter = '|', emptyValue = "")
+    void parametrosInvalidosRetornam400(String campo, String valor) throws Exception {
+        mvc.perform(get("/api/admin/alunos").with(user("gestao").roles("GESTAO"))
+                        .param(campo, valor == null ? "" : valor))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.camposInvalidos[0].campo").value(campo));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"gestores", "professores", "alunos"})
+    void senhasSaoValidadasPorBytesUtf8(String recurso) throws Exception {
+        String[] validas = {"a".repeat(72), "é".repeat(36), "😀".repeat(18)};
+        String[] invalidas = {"a".repeat(73), "é".repeat(37), "😀".repeat(19)};
+        for (int i = 0; i < validas.length; i++) {
+            String email = "bytes" + i + recurso + "@sanquim.br";
+            cadastrar(recurso, Map.of(
+                    "nome", "Teste UTF-8", "cargo", "Secretaria", "email", email, "senha", validas[i]));
+            mvc.perform(post("/api/admin/" + recurso).with(user("gestao").roles("GESTAO"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(Map.of(
+                                    "nome", "Teste UTF-8", "cargo", "Secretaria",
+                                    "email", "invalida" + email, "senha", invalidas[i]))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.camposInvalidos[0].campo").value("senha"));
+        }
     }
 
     private JsonNode cadastrar(String recurso, Object request) throws Exception {

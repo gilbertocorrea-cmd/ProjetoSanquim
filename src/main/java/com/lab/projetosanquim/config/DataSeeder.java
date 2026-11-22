@@ -14,11 +14,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
+import com.lab.projetosanquim.validation.MaxBytes;
+import com.lab.projetosanquim.validation.MaxBytesValidator;
 
 @Component
+@Order(0)
 @ConditionalOnProperty(name = "sanquim.demo.seed", havingValue = "true")
 public class DataSeeder implements CommandLineRunner {
     private final UsuarioRepository usuarios;
@@ -43,7 +46,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (senha.isBlank() || senha.getBytes(StandardCharsets.UTF_8).length > 72) {
+        if (senha.isBlank() || !MaxBytesValidator.cabeEmUtf8(senha, MaxBytes.LIMITE_SENHA)) {
             throw new IllegalStateException("Defina SANQUIM_DEMO_PASSWORD com uma senha de até 72 bytes");
         }
 

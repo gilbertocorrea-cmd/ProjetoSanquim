@@ -56,9 +56,9 @@ class ProjetoSanquimApplicationTests {
 
     @ParameterizedTest
     @CsvSource({
-            "admin@sanquim.br, ROLE_GESTAO, 200, 404, 403",
-            "professor1@sanquim.br, ROLE_PROFESSOR, 403, 404, 403",
-            "aluno1@sanquim.br, ROLE_ALUNO, 403, 403, 404"
+            "admin@sanquim.br, ROLE_GESTAO, 200, 200, 403",
+            "professor1@sanquim.br, ROLE_PROFESSOR, 403, 200, 403",
+            "aluno1@sanquim.br, ROLE_ALUNO, 403, 403, 200"
     })
     void autenticaCadaPerfilEAplicaPermissoes(
             String email, String role, int adminStatus, int diarioStatus, int alunoStatus
@@ -78,7 +78,7 @@ class ProjetoSanquimApplicationTests {
         assertThat(login.expiraEm()).isAfter(Instant.now());
         assertThat(JWT.decode(login.token()).getExpiresAtAsInstant()).isEqualTo(login.expiraEm());
 
-        // O diário e o boletim serão implementados nas próximas etapas.
+        // Cada perfil acessa somente os módulos autorizados.
         verificaAcesso("/api/admin/alunos", login.token(), adminStatus);
         verificaAcesso("/api/diario/minhas-turmas", login.token(), diarioStatus);
         verificaAcesso("/api/aluno/boletim", login.token(), alunoStatus);
@@ -98,7 +98,7 @@ class ProjetoSanquimApplicationTests {
                                 {"email": "email-invalido", "senha": ""}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.camposInvalidos.length()").value(2));
+                .andExpect(jsonPath("$.camposInvalidos.length()").value(1));
 
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -147,6 +147,18 @@ class ProjetoSanquimApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/auth/login'].post").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
+    }
+
+    @Test
+    void qualquerSenhaInvalidaNoLoginRetorna401() throws Exception {
+        var senhas = java.util.Arrays.asList(null, "", " ", "a".repeat(73), "é".repeat(37), "😀".repeat(19));
+        for (int i = 0; i < senhas.size(); i++) {
+            var request = new com.lab.projetosanquim.dto.LoginRequest("senha-invalida" + i + "@sanquim.br", senhas.get(i));
+            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                            .content(mapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.mensagem").value("E-mail ou senha inválidos"));
+        }
     }
 
     private void verificaAcesso(String rota, String token, int esperado) throws Exception {

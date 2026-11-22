@@ -4,6 +4,8 @@ import com.lab.projetosanquim.dto.ErroResponse;
 import com.lab.projetosanquim.dto.ErroResponse.CampoInvalido;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,9 +15,31 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroResponse parametroInvalido(MethodArgumentTypeMismatchException exception) {
+        return new ErroResponse(400, "Dados de entrada inválidos",
+                java.util.List.of(new CampoInvalido(exception.getName(), "Informe um número inteiro válido")));
+    }
+
+    @ExceptionHandler(ParametroPaginacaoException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroResponse paginacaoInvalida(ParametroPaginacaoException exception) {
+        return new ErroResponse(400, "Dados de entrada inválidos",
+                java.util.List.of(new CampoInvalido(exception.getCampo(), exception.getMessage())));
+    }
+
+    @ExceptionHandler(LoginRateLimitException.class)
+    public ResponseEntity<ErroResponse> limiteLogin(LoginRateLimitException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(exception.getRetryAfter()))
+                .body(new ErroResponse(429, exception.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErroResponse camposInvalidos(MethodArgumentNotValidException exception) {

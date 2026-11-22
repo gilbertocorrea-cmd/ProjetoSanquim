@@ -19,13 +19,13 @@ No PowerShell, com as mesmas variáveis definidas na sessão, execute `.\mvnw.cm
 | `ROLE_PROFESSOR` | `professor1@sanquim.br` e `professor2@sanquim.br` |
 | `ROLE_ALUNO` | `aluno1@sanquim.br` a `aluno5@sanquim.br` |
 
-Use a senha de demonstração configurada na primeira criação das contas. A carga é opcional e preserva usuários existentes, incluindo suas senhas. Esta etapa cria as contas e os vínculos com seus perfis. A carga de turmas, matrículas, chamadas e avaliações acompanha os módulos acadêmicos.
+Use a senha de demonstração configurada na primeira criação das contas. A carga é opcional e preserva usuários existentes, incluindo suas senhas. Com SANQUIM_DEMO_SEED=true, a carga também cria a turma Demonstração Sanquim, atribui Matemática ao professor1 e História ao professor2, enturma os cinco alunos e inclui uma chamada e uma avaliação com notas de demonstração. Reiniciar preserva os registros e notas já existentes.
 
 ## Testar a API
 
 Abra o [Swagger UI local](http://localhost:8080/swagger-ui.html) e execute `POST /api/auth/login` com `email` e `senha`. A resposta de sucesso contém `token`, `expiraEm` (data e hora UTC) e `role`. O token vale uma hora.
 
-Para as demais rotas, envie `Authorization: Bearer <token>`. O filtro aplica as permissões abaixo. O diário e as consultas do aluno ainda serão implementados nas próximas etapas.
+Para as demais rotas, envie `Authorization: Bearer <token>`. O filtro aplica as permissões abaixo. O Diário de Classe e as consultas privadas do aluno já estão disponíveis.
 
 | Rotas | Perfis autorizados |
 | --- | --- |
@@ -39,7 +39,13 @@ Execute `.\mvnw.cmd test` para rodar os testes de integração com banco H2 em m
 
 ## Cadastros de Gestão
 
+O controller delega aos serviços de Gestor, Professor, Aluno, Turma, Disciplina, Matrícula e Atribuição Docente. A criação de usuário e a busca de turma ativa são compartilhadas. Cada cadastro preserva sua transação, inclusive o rollback do usuário quando a gravação do perfil falha. Os DTOs continuam convertidos pelos métodos estáticos `from(...)`.
+
 As rotas abaixo aceitam `POST` para cadastrar e `GET` para listar. O cadastro retorna `201`, e a listagem retorna `200`. Todas exigem token de `ROLE_GESTAO`.
+
+Os sete GETs aceitam `page` (a partir de 0, padrão 0) e `size` (de 1 a 100, padrão 20). A ordenação é sempre por ID crescente e ignora `sort`. Parâmetros vazios, não inteiros, negativos ou fora do intervalo suportado retornam 400 em ErroResponse.
+
+A resposta tem `conteudo`, `pagina`, `tamanho`, `totalElementos` e `totalPaginas`. Os registros ficam em `conteudo`. Exemplo de consulta, `GET /api/admin/alunos?page=0&size=20`. Uma página além dos dados retorna conteúdo vazio e preserva os totais.
 
 | Rota | Campos do cadastro |
 | --- | --- |
@@ -52,6 +58,8 @@ As rotas abaixo aceitam `POST` para cadastrar e `GET` para listar. O cadastro re
 | `/api/admin/atribuicoes` | `professorId`, `turmaId`, `disciplinaId` |
 
 O servidor define o perfil a partir do cadastro escolhido. Cada nova conta pode receber sua própria senha, independente da senha das contas de demonstração. As respostas incluem o ID do perfil e o `usuarioId`. Use o ID do perfil nos vínculos de matrícula e atribuição docente.
+
+Nos cadastros de gestores, professores e alunos, a senha é validada por `@MaxBytes` e aceita até 72 bytes em UTF-8. Por exemplo, 36 letras é ou 18 emojis 😀 ocupam 72 bytes. Acima disso, a resposta é 400 e `camposInvalidos` contém o campo `senha`. No login, senhas ausentes, vazias ou acima do limite retornam 401 com a mensagem `E-mail ou senha inválidos`, sujeito ao limite de tentativas. A regra de bytes é compartilhada com a autenticação e com a carga de demonstração.
 
 E-mails duplicados, matrículas repetidas, atribuições repetidas e vínculos com turmas inativas retornam `409`. Referências a IDs inexistentes retornam `404`. Campos obrigatórios ausentes ou inválidos retornam `400` com `camposInvalidos`.
 
@@ -111,6 +119,144 @@ Os e-mails dos exemplos devem estar disponíveis na primeira execução. Se já 
 
 A coleção do Postman também contém a pasta **Gestão**, com login, cadastros encadeados, captura automática dos IDs e verificações das respostas.
 
+## Diário de Classe
+
+As rotas abaixo usam token de Professor ou Gestão. O professor só pode lançar dados para as combinações de turma e disciplina que lhe foram atribuídas. Gestão pode realizar os lançamentos em turmas ativas.
+
+| Método e rota | Resultado |
+| --- | --- |
+| `GET /api/diario/minhas-turmas` | 200, turmas e disciplinas do professor autenticado |
+| `POST /api/diario/chamada` | 201, chamada com registros de presença |
+| `POST /api/diario/avaliacoes` | 201, avaliação criada |
+| `POST /api/diario/avaliacoes/{avaliacaoId}/notas` | 200, nota criada ou atualizada |
+| `POST /api/diario/planos-aula` | 201, plano de aula criado |
+
+`minhas-turmas` consulta o vínculo de Professor do usuário logado. Uma conta de Gestão sem esse vínculo recebe lista vazia. Para consultar os cadastros gerais, Gestão usa as rotas de administração.
+
+A chamada aceita os alunos informados no lote e exige matrícula ativa de todos na turma. O lote inteiro é validado antes da gravação. Um aluno repetido no lote ou uma chamada já existente para a mesma turma, disciplina e data retorna 409. A restrição única do banco também impede duplicidade em requisições simultâneas.
+
+Notas aceitam zero e devem ser menores ou iguais à nota máxima. Aluno com matrícula inativa ou em outra turma é rejeitado. Repetir o lançamento para a mesma avaliação e aluno atualiza o registro existente. Notas, pesos e notas máximas usam decimal exato com até quatro casas decimais, com validação para evitar arredondamento silencioso. Peso e nota máxima devem ser positivos.
+
+### Testar o diário no Swagger
+
+1. Pare e inicie `ProjetoSanquimApplication` no IntelliJ e atualize o Swagger.
+2. Com o token de Gestão, cadastre ou consulte um Professor, um Aluno, uma Turma ativa e uma Disciplina. Anote os IDs de cada recurso, conforme o roteiro de Gestão.
+3. Em `POST /api/admin/matriculas`, associe o Aluno à Turma. Em `POST /api/admin/atribuicoes`, associe o Professor à mesma Turma e Disciplina.
+4. Faça login com o e-mail e a senha desse Professor. Em **Authorize**, remova o token anterior e cole o token do Professor. Execute `GET /api/diario/minhas-turmas` e confira os IDs.
+
+Para um teste rápido com a carga de demonstração, você também pode entrar como `professor1@sanquim.br`, usar a senha de demonstração que já funciona e consultar `minhas-turmas`. A chamada de demonstração usa 2026-11-10. Use outra data para testar um lançamento novo.
+5. Em `POST /api/diario/chamada`, use o corpo abaixo. Substitua os números pelos IDs reais que você anotou.
+
+```json
+{
+  "turmaId": 1,
+  "disciplinaId": 1,
+  "dataAula": "2026-11-10",
+  "registros": [
+    { "alunoId": 1, "presente": true }
+  ]
+}
+```
+
+Confira 201 em **Server response**. Execute o mesmo corpo outra vez e confira 409.
+
+6. Em `POST /api/diario/avaliacoes`, use os mesmos IDs de turma e disciplina e anote o ID da avaliação retornada.
+
+```json
+{
+  "turmaId": 1,
+  "disciplinaId": 1,
+  "titulo": "Prova 1",
+  "tipo": "PROVA",
+  "notaMaxima": 10,
+  "peso": 1,
+  "dataEntrega": "2026-11-10"
+}
+```
+
+7. Em `POST /api/diario/avaliacoes/{avaliacaoId}/notas`, preencha o ID da avaliação e use o ID real do aluno.
+
+```json
+{
+  "alunoId": 1,
+  "valor": 8
+}
+```
+
+Confira 200. Troque o valor para 9 e execute novamente. O ID da nota deve permanecer igual. Com valor 11 e nota máxima 10, o resultado esperado é 409.
+
+8. Em `POST /api/diario/planos-aula`, use os mesmos IDs.
+
+```json
+{
+  "turmaId": 1,
+  "disciplinaId": 1,
+  "dataAula": "2026-11-10",
+  "topicos": "Equações do primeiro grau"
+}
+```
+
+Confira 201. Com outro Professor sem atribuição para essa turma e disciplina, os lançamentos devem retornar 403. Com token de Aluno, todas as rotas do diário devem retornar 403.
+
+A pasta **Diário de Classe** do Postman usa os IDs criados pela pasta **Gestão**, autentica o Professor criado e executa essa sequência. Execute Gestão antes dela.
+
+Em desenvolvimento, Hibernate cria as tabelas novas com ddl-auto=update. Em prod, Flyway aplica `V2__diario_classe.sql` e Hibernate valida o esquema. Para adoção inicial de um banco existente, baseline 1 pressupõe o esquema V1. Se as tabelas do diário já foram criadas pelo Hibernate, a adoção deve considerar o esquema V2 existente e seu histórico, evitando reaplicar a criação das tabelas.
+
+## Consultas do Aluno
+
+As três consultas são exclusivas de ROLE_ALUNO e usam o aluno associado ao usuário do token. Elas não recebem ID de aluno. Um parâmetro adicional alunoId é ignorado e não muda o proprietário dos dados. Professor e Gestão recebem 403 nessas rotas.
+
+| Método e rota | Resultado |
+| --- | --- |
+| `GET /api/aluno/boletim` | Notas por turma e disciplina, situação de cada avaliação e média parcial |
+| `GET /api/aluno/frequencia` | Presenças, faltas, percentual global e detalhamento por turma e disciplina |
+| `GET /api/aluno/aulas` | Conteúdos das aulas das matrículas ativas, com data até hoje |
+
+O boletim usa a regra aprovada de normalização para 0 a 10 e ponderação pelos pesos. A fórmula é `sum((valor / notaMaxima) * 10 * peso) / sum(pesos das notas lançadas)`. O cálculo usa BigDecimal, com precisão intermediária DECIMAL128. As notas normalizadas e a média são apresentadas com quatro casas decimais e arredondamento HALF_UP. O arredondamento de apresentação de cada nota não é usado no cálculo da média.
+
+Nota ainda não lançada tem situação NAO_LANCADA, valor e notaNormalizada nulos e fica fora da média. Nota zero lançada tem situação LANCADA, valor zero e seu peso entra na média. Uma disciplina sem notas lançadas tem mediaParcial nula.
+
+Avaliações das matrículas ativas aparecem no boletim. Notas próprias de turmas anteriores também são preservadas no histórico, separadas por turma e ano letivo. Avaliações sem nota de uma matrícula inativa ficam fora dessa consulta.
+
+A frequência considera somente os registros individuais do aluno. Uma chamada em que ele não tem registro não é convertida automaticamente em falta. O percentual é `presencas * 100 / aulasRegistradas`, apresentado com quatro casas decimais e HALF_UP. O histórico inclui registros próprios de matrículas anteriores. Sem registros, os totais são zero, as listas são vazias e percentualGlobal é nulo.
+
+As aulas usam matrículas ativas e dataAula menor ou igual à data atual do servidor. A ordem é dataAula decrescente e, em caso de empate, ID decrescente. A consulta preserva o formato AulaResponse usado no diário.
+
+### Testar as consultas no Swagger
+
+1. Pare e inicie a aplicação no IntelliJ e atualize o Swagger.
+2. Faça login como `aluno1@sanquim.br` com a senha de demonstração que já funciona.
+3. Copie somente o token retornado. Em **Authorize**, remova a autorização anterior e cole o novo token.
+4. No grupo **Aluno**, execute os três GETs sem corpo. Todos devem retornar 200.
+5. Em boletim, confira valor, notaMaxima, peso, notaNormalizada e mediaParcial. Uma avaliação recém-criada sem lançamento de nota deve aparecer como NAO_LANCADA e não reduzir a média.
+6. Em frequência, confira as presenças e faltas que você lançou no diário. Em aulas, confira os tópicos registrados para a turma do aluno.
+7. Faça login como `aluno2@sanquim.br`, substitua o token e consulte novamente para conferir o isolamento dos dados.
+8. Com token de Professor ou Gestão, os três GETs devem retornar 403. Sem token, devem retornar 401.
+
+Os dados de demonstração já incluem matrícula, avaliação, notas e frequência. Para a consulta de aulas ter conteúdo, registre um plano de aula no Diário de Classe para a mesma turma, com data até hoje.
+
+A pasta **Aluno** da coleção Postman usa as contas de demonstração, valida os três retornos e inclui testes de bloqueio por perfil. A senha continua na variável senhaDemo.
+
 ## Chave JWT
 
 Sem configuração adicional, a aplicação gera uma chave aleatória ao iniciar. Reiniciar invalida os tokens emitidos com essa chave. Para manter os tokens válidos entre reinicializações ou compartilhar uma chave entre instâncias, configure `SANQUIM_JWT_SECRET` com pelo menos 32 bytes aleatórios codificados em Base64.
+
+## Perfil prod e migrações
+
+Ative o perfil Spring `prod` e forneça `SANQUIM_JWT_SECRET` em Base64 com ao menos 32 bytes aleatórios. A inicialização falha com segredo ausente, vazio, inválido ou curto. Nesse perfil, Swagger fica desativado, show-sql=false e ddl-auto=validate. No perfil padrão, permanecem Swagger público, show-sql=true, ddl-auto=update e a chave JWT aleatória quando não configurada.
+
+O projeto usa `org.springframework.boot:spring-boot-starter-flyway` e `org.flywaydb:flyway-mysql`, com as versões gerenciadas pelo BOM do Spring Boot 4.1.2 (Flyway 12.4.0). Os artefatos foram compilados e executados com Java 17. Consulte a [documentação oficial](https://docs.spring.io/spring-boot/4.1/how-to/data-initialization.html).
+
+Flyway está desligado no perfil padrão e nos testes H2 com create-drop. Somente prod aplica as migrações de `db/migration` antes da validação JPA. A V1 corresponde às oito tabelas administrativas iniciais, incluindo `usuarios.role VARCHAR(255)`, o valor persistido `ROLE_GESTOR`, chaves estrangeiras e restrições únicas. A V2 acrescenta as cinco tabelas do Diário de Classe.
+
+Para banco vazio, Flyway executa V1 e V2. Para banco existente sem histórico Flyway, baseline-on-migrate=true e baseline-version=1 registram o baseline, pulam a V1 e executam a V2. Esse banco existente deve corresponder ao esquema V1 antes da adoção. Compare a estrutura e o histórico antes de ativar prod no ambiente desejado. O baseline não corrige divergências de esquema.
+
+`ProdMySqlTests` é habilitado apenas quando `SANQUIM_MYSQL_TEST_URL` aponta para uma instância MySQL descartável, sem nome de banco. Informe também `SANQUIM_MYSQL_TEST_USER` e, se necessário, `SANQUIM_MYSQL_TEST_PASSWORD`. O teste cria bancos de nomes aleatórios, executa criação/baseline, inicia prod com validação das entidades, verifica a leitura de ROLE_GESTOR e remove somente os bancos que criou. Os testes H2 continuam usando create-drop e Flyway desativado.
+
+## Limite de tentativas de login
+
+Somente falhas de credenciais contam. Após 5 falhas pelo mesmo e-mail ou 20 pelo mesmo IP, a próxima tentativa retorna 429 com o corpo ErroResponse e Retry-After em segundos. Cada janela dura 15 minutos a partir da primeira falha. O e-mail é normalizado com strip e minúsculas, incluindo contas inexistentes. Um login válido zera as falhas daquele e-mail e preserva as falhas do IP. Erros 400 não contam.
+
+Configure sanquim.auth.login-rate-limit.email-limit (5), ip-limit (20) e window (15m) sob o prefixo sanquim.auth.login-rate-limit. O IP vem de request.getRemoteAddr(). A aplicação recebe conexões diretas. Os contadores ficam na memória da instância, expiram e são limpos periodicamente. As seções críticas curtas verificam os limites, reservam uma tentativa por e-mail e IP e ajustam os contadores. A autenticação é executada fora do lock. Sucesso limpa o e-mail e devolve a reserva do IP. Falha de credencial mantém a reserva. Outras exceções devolvem as duas reservas. Conclusões antigas só ajustam entradas com o mesmo expiraEm, preservando janelas novas. Reservas em andamento ocupam temporariamente a capacidade dos respectivos contadores. Reiniciar a aplicação apaga os contadores. A interface LoginAttemptLimiter permite substituir o armazenamento futuramente.
+
+A pasta Limite de login da coleção Postman executa seis tentativas com uma conta inexistente e verifica 401 nas cinco primeiras e 429 com Retry-After na sexta. Execute-a uma vez por janela para um e-mail e IP disponíveis.
