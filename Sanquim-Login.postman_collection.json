@@ -952,7 +952,8 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"registros\": [\n    {\n      \"alunoId\": {{alunoId}},\n      \"presente\": true\n    }\n  ]\n}"
-            }
+            },
+            "description": "Inclua todos os alunos com matricula ativa na turma, uma vez cada. O exemplo usa a turma criada na pasta Gestao, com um aluno ativo."
           },
           "event": [
             {
@@ -1136,8 +1137,117 @@
               }
             }
           ]
+        },
+        {
+          "name": "Chamada com 501 registros retorna 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/chamada",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"registros\": {{registrosExcesso}}\n}"
+            },
+            "description": "Excesso validado antes do servico. Deve retornar 400 com o campo correspondente."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"registrosExcesso\", JSON.stringify(Array.from({length: 501}, (_, i) => ({alunoId: i + 1, presente: true}))));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Campo invalido\", () => pm.expect(pm.response.json().camposInvalidos.map(c => c.campo)).to.include(\"registros\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Plano com 10001 caracteres retorna 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/planos-aula",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2026-11-10\",\n  \"topicos\": \"{{topicosExcesso}}\"\n}"
+            },
+            "description": "Excesso validado antes do servico. Deve retornar 400 com o campo correspondente."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"topicosExcesso\", \"a\".repeat(10001));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Campo invalido\", () => pm.expect(pm.response.json().camposInvalidos.map(c => c.campo)).to.include(\"topicos\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chamada futura retorna 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/diario/chamada",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"turmaId\": {{turmaId}},\n  \"disciplinaId\": {{disciplinaId}},\n  \"dataAula\": \"2099-01-01\",\n  \"registros\": [\n    {\n      \"alunoId\": {{alunoId}},\n      \"presente\": true\n    }\n  ]\n}"
+            },
+            "description": "Data futura em America/Sao_Paulo deve falhar antes do servico."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Data invalida\", () => pm.expect(pm.response.json().camposInvalidos.map(c => c.campo)).to.include(\"dataAula\"));"
+                ]
+              }
+            }
+          ]
         }
-      ]
+      ],
+      "description": "A turma criada na pasta Gestao tem um unico aluno ativo. A chamada desta pasta inclui esse aluno e, portanto, o lote completo. Se matricular outros alunos, inclua todos em registros. Lote incompleto retorna 409 sem gravar."
     },
     {
       "name": "Aluno",

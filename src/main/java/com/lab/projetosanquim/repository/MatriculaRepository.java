@@ -9,4 +9,5 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     boolean existsByAlunoIdAndTurmaId(Long alunoId, Long turmaId);
     boolean existsByAlunoIdAndTurmaIdAndAtivaTrue(Long alunoId, Long turmaId);
     List<Matricula> findByTurmaIdAndAtivaTrueAndAlunoIdIn(Long turmaId, Collection<Long> alunoIds);
+    List<Matricula> findByTurmaIdAndAtivaTrue(Long turmaId);
 }

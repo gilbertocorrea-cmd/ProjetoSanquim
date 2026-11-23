@@ -1,5 +1,24 @@
 # API REST do Colégio Sanquim
 
+## Obter e configurar o projeto
+
+No PowerShell, clone o repositório e entre na pasta criada.
+
+```powershell
+git clone https://github.com/victormourahs/ProjetoSanquim.git
+cd ProjetoSanquim
+```
+
+No IntelliJ, abra a pasta como projeto Maven e selecione Java 17 ou 21. O Maven Wrapper está incluído no repositório.
+
+Crie o banco local `sanquim` no MySQL, caso ainda não exista. Use uma conta de administração do seu MySQL para conceder ao usuário da aplicação acesso a esse banco. Configure `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD` na execução do IntelliJ conforme sua instalação. Os padrões de URL e usuário estão em `application.properties`. No desenvolvimento, Hibernate cria e atualiza as tabelas ao iniciar.
+
+```sql
+CREATE DATABASE IF NOT EXISTS sanquim CHARACTER SET utf8mb4;
+```
+
+Depois siga a configuração das contas de demonstração abaixo. Para uma instalação com perfil `prod`, consulte a seção de migrações antes de executar.
+
 ## Executar o login localmente
 
 Use Java 17 ou 21 e um banco MySQL local chamado `sanquim`. O arquivo `src/main/resources/application.properties` contém a configuração da conexão. Defina `SPRING_DATASOURCE_PASSWORD` com a senha do usuário do banco, como na configuração de execução do IntelliJ.
@@ -21,6 +40,8 @@ No PowerShell, com as mesmas variáveis definidas na sessão, execute `.\mvnw.cm
 
 Use a senha de demonstração configurada na primeira criação das contas. A carga é opcional e preserva usuários existentes, incluindo suas senhas. Com SANQUIM_DEMO_SEED=true, a carga também cria a turma Demonstração Sanquim, atribui Matemática ao professor1 e História ao professor2, enturma os cinco alunos e inclui uma chamada e uma avaliação com notas de demonstração. Reiniciar preserva os registros e notas já existentes.
 
+Com o perfil `prod` ativo, `SANQUIM_DEMO_SEED=true` impede a inicialização. Os dois seeders verificam o perfil antes de executar a carga e falham com `A carga de demonstração não pode ser executada no perfil prod`. Em produção mantenha a carga desativada. Fora de `prod`, a configuração e o comportamento da demonstração permanecem os mesmos.
+
 ## Testar a API
 
 Abra o [Swagger UI local](http://localhost:8080/swagger-ui.html) e execute `POST /api/auth/login` com `email` e `senha`. A resposta de sucesso contém `token`, `expiraEm` (data e hora UTC) e `role`. O token vale uma hora.
@@ -36,6 +57,24 @@ Para as demais rotas, envie `Authorization: Bearer <token>`. O filtro aplica as 
 Importe `Sanquim-Login.postman_collection.json` no Postman, preencha a variável `senhaDemo` e execute a coleção na ordem indicada. Ela valida os três logins, o `403` do aluno ao tentar registrar presença e o `401` de uma requisição sem token.
 
 Execute `.\mvnw.cmd test` para rodar os testes de integração com banco H2 em memória.
+
+## Validar o fluxo completo do MVP
+
+O teste `FluxoEscolarTests` acompanha uma operação escolar completa, usando logins reais e o JWT retornado pela API. Ele usa um banco H2 separado, cria somente o gestor inicial diretamente e realiza os demais cadastros e lançamentos pelas rotas HTTP. Cada requisição conclui sua própria transação.
+
+| Etapa | Verificação automatizada |
+| --- | --- |
+| Gestão | Login, cadastro de professor, alunos, turma e disciplina, matrícula e atribuição docente |
+| Professor | Login, consulta da atribuição, chamada com falta, rejeição da chamada duplicada e plano de aula |
+| Avaliações | Duas notas com máximas e pesos diferentes, uma avaliação pendente e atualização de nota |
+| Aluno | Login, boletim atualizado, falta acumulada e conteúdo da aula |
+| Acesso | Outro aluno sem acesso aos resultados, aluno bloqueado na Gestão, professor bloqueado no boletim e requisição sem token rejeitada |
+
+Para executar apenas esse fluxo no Windows, use `.\mvnw.cmd -Dtest=FluxoEscolarTests test`. A suíte completa continua disponível com `.\mvnw.cmd test`. Os testes de produção com MySQL exigem a configuração descrita na seção de migrações.
+
+Para repetir no Swagger com seus dados de demonstração, siga os roteiros de Gestão, Diário de Classe e Consultas do Aluno deste README, nesta ordem. Use uma data de chamada ainda não registrada. Cadastre uma avaliação com nota máxima 20 e peso 2 e outra com nota máxima 10 e peso 1. Lance, para o mesmo aluno, as notas 12 e 10. O boletim deve apresentar média `7.3333`. Atualize a primeira nota para 16 e consulte novamente, esperando `8.6667`. Uma terceira avaliação sem nota lançada deve aparecer como `NAO_LANCADA` e preservar a média.
+
+Confira também uma falta registrada na chamada e os tópicos do plano de aula, com data até hoje. Com o token do aluno, tente listar alunos na Gestão e confira `403`. Este roteiro altera os dados locais que você cadastrar e lançar.
 
 ## Cadastros de Gestão
 
@@ -133,7 +172,13 @@ As rotas abaixo usam token de Professor ou Gestão. O professor só pode lançar
 
 `minhas-turmas` consulta o vínculo de Professor do usuário logado. Uma conta de Gestão sem esse vínculo recebe lista vazia. Para consultar os cadastros gerais, Gestão usa as rotas de administração.
 
-A chamada aceita os alunos informados no lote e exige matrícula ativa de todos na turma. O lote inteiro é validado antes da gravação. Um aluno repetido no lote ou uma chamada já existente para a mesma turma, disciplina e data retorna 409. A restrição única do banco também impede duplicidade em requisições simultâneas.
+A chamada exige todos os alunos com matrícula ativa na turma, exatamente uma vez cada. O lote inteiro é validado antes da gravação. Se faltar algum aluno ativo, retorna 409 com a mensagem `A chamada deve incluir todos os alunos com matrícula ativa na turma`, sem gravar chamada ou frequência. As validações de aluno repetido (409), inexistente (404) e sem matrícula ativa na turma (409) continuam ocorrendo antes da verificação de completude. Uma chamada já existente para a mesma turma, disciplina e data retorna 409. A restrição única do banco também impede duplicidade em requisições simultâneas.
+
+O corpo da chamada aceita no máximo 500 registros. Os tópicos do plano de aula aceitam até 10.000 caracteres e continuam obrigatórios. Exceder esses limites retorna 400 com `registros` ou `topicos` em `camposInvalidos`. Uma turma com mais de 500 alunos ativos não pode registrar chamada por este contrato; não divida a chamada em lotes parciais.
+
+No lançamento de notas, a avaliação é consultada e o acesso é validado antes de obter o lock pessimista. Avaliação inexistente continua retornando 404 e professor sem atribuição, 403. Para os pedidos autorizados, o lock da avaliação continua serializando os lançamentos. A consulta da nota usa uma leitura bloqueante após esse lock para obter o estado atual, inclusive com `REPEATABLE READ` do MySQL. Esse isolamento mantém a visão da primeira leitura comum, enquanto leituras bloqueantes usam o estado mais recente, conforme a [documentação do MySQL](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html).
+
+Na chamada, `dataAula` deve ser hoje ou uma data passada, considerando `America/Sao_Paulo`. Uma data futura retorna 400 com `dataAula` em `camposInvalidos`. O bean `Clock` é compartilhado pela validação e pelo corte de datas da consulta de aulas do aluno, e pode ser substituído por um relógio fixo nos testes. Planos de aula e datas de entrega de avaliações continuam aceitando datas futuras.
 
 Notas aceitam zero e devem ser menores ou iguais à nota máxima. Aluno com matrícula inativa ou em outra turma é rejeitado. Repetir o lançamento para a mesma avaliação e aluno atualiza o registro existente. Notas, pesos e notas máximas usam decimal exato com até quatro casas decimais, com validação para evitar arredondamento silencioso. Peso e nota máxima devem ser positivos.
 
@@ -145,7 +190,7 @@ Notas aceitam zero e devem ser menores ou iguais à nota máxima. Aluno com matr
 4. Faça login com o e-mail e a senha desse Professor. Em **Authorize**, remova o token anterior e cole o token do Professor. Execute `GET /api/diario/minhas-turmas` e confira os IDs.
 
 Para um teste rápido com a carga de demonstração, você também pode entrar como `professor1@sanquim.br`, usar a senha de demonstração que já funciona e consultar `minhas-turmas`. A chamada de demonstração usa 2026-11-10. Use outra data para testar um lançamento novo.
-5. Em `POST /api/diario/chamada`, use o corpo abaixo. Substitua os números pelos IDs reais que você anotou.
+5. Em `POST /api/diario/chamada`, use o corpo abaixo. Substitua os números pelos IDs reais que você anotou e inclua todos os alunos ativos da turma em `registros`. O exemplo com um aluno só serve para uma turma que tenha exatamente um aluno ativo. Na turma de demonstração inicial são cinco alunos. Para testar o erro, em uma data ainda sem chamada, omita um aluno ativo e confira 409; depois envie o lote completo na mesma data e confira 201.
 
 ```json
 {
@@ -158,7 +203,7 @@ Para um teste rápido com a carga de demonstração, você também pode entrar c
 }
 ```
 
-Confira 201 em **Server response**. Execute o mesmo corpo outra vez e confira 409.
+Use uma data passada ou o dia atual de São Paulo, ainda sem chamada nessa turma e disciplina. Confira 201 em **Server response**. Execute o mesmo corpo outra vez e confira 409. Troque somente a data para amanhã e confira 400 com `dataAula` em `camposInvalidos`.
 
 6. Em `POST /api/diario/avaliacoes`, use os mesmos IDs de turma e disciplina e anote o ID da avaliação retornada.
 
@@ -220,7 +265,7 @@ Avaliações das matrículas ativas aparecem no boletim. Notas próprias de turm
 
 A frequência considera somente os registros individuais do aluno. Uma chamada em que ele não tem registro não é convertida automaticamente em falta. O percentual é `presencas * 100 / aulasRegistradas`, apresentado com quatro casas decimais e HALF_UP. O histórico inclui registros próprios de matrículas anteriores. Sem registros, os totais são zero, as listas são vazias e percentualGlobal é nulo.
 
-As aulas usam matrículas ativas e dataAula menor ou igual à data atual do servidor. A ordem é dataAula decrescente e, em caso de empate, ID decrescente. A consulta preserva o formato AulaResponse usado no diário.
+As aulas usam matrículas ativas e dataAula menor ou igual à data atual em `America/Sao_Paulo`, obtida pelo mesmo bean `Clock` da validação da chamada. A ordem é dataAula decrescente e, em caso de empate, ID decrescente. A consulta preserva o formato AulaResponse usado no diário.
 
 ### Testar as consultas no Swagger
 
@@ -252,6 +297,10 @@ Flyway está desligado no perfil padrão e nos testes H2 com create-drop. Soment
 Para banco vazio, Flyway executa V1 e V2. Para banco existente sem histórico Flyway, baseline-on-migrate=true e baseline-version=1 registram o baseline, pulam a V1 e executam a V2. Esse banco existente deve corresponder ao esquema V1 antes da adoção. Compare a estrutura e o histórico antes de ativar prod no ambiente desejado. O baseline não corrige divergências de esquema.
 
 `ProdMySqlTests` é habilitado apenas quando `SANQUIM_MYSQL_TEST_URL` aponta para uma instância MySQL descartável, sem nome de banco. Informe também `SANQUIM_MYSQL_TEST_USER` e, se necessário, `SANQUIM_MYSQL_TEST_PASSWORD`. O teste cria bancos de nomes aleatórios, executa criação/baseline, inicia prod com validação das entidades, verifica a leitura de ROLE_GESTOR e remove somente os bancos que criou. Os testes H2 continuam usando create-drop e Flyway desativado.
+
+`MySqlDiarioTests` usa as mesmas variáveis e exige a mesma instância descartável. Cada caso cria seu próprio banco, aplica V1/V2 em `prod` com `ddl-auto=validate` e desativa a demonstração. Ele verifica o 403 de um professor sem atribuição enquanto outra transação mantém o lock da avaliação e a atualização concorrente da mesma nota com `REPEATABLE READ`. No segundo caso, uma transação estabelece sua visão antes do commit da outra; os dois lançamentos devem retornar o mesmo ID e deixar uma única nota com o valor atualizado. Os bancos são removidos depois dos testes.
+
+Para executar somente as verificações MySQL, configure as três variáveis na sessão que executará o Maven e use `.\mvnw.cmd '-Dtest=ProdMySqlTests,MySqlDiarioTests' test`. A URL deve identificar somente o servidor, por exemplo `jdbc:mysql://127.0.0.1:PORTA`, substituindo `PORTA` pela porta da instância descartável. Não use a instância que mantém seus dados de desenvolvimento ou produção. Sem `SANQUIM_MYSQL_TEST_URL`, os quatro casos MySQL são ignorados e a suíte H2 continua disponível. Nenhuma dessas variáveis altera a conexão da aplicação executada separadamente no IntelliJ.
 
 ## Limite de tentativas de login
 

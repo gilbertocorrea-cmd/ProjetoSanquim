@@ -16,6 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 import com.lab.projetosanquim.validation.MaxBytes;
 import com.lab.projetosanquim.validation.MaxBytesValidator;
@@ -30,10 +33,12 @@ public class DataSeeder implements CommandLineRunner {
     private final AlunoRepository alunos;
     private final PasswordEncoder encoder;
     private final String senha;
+    private final Environment environment;
 
     public DataSeeder(
             UsuarioRepository usuarios, GestorRepository gestores, ProfessorRepository professores,
-            AlunoRepository alunos, PasswordEncoder encoder, @Value("${SANQUIM_DEMO_PASSWORD:}") String senha
+            AlunoRepository alunos, PasswordEncoder encoder, @Value("${SANQUIM_DEMO_PASSWORD:}") String senha,
+            Environment environment
     ) {
         this.usuarios = usuarios;
         this.gestores = gestores;
@@ -41,6 +46,14 @@ public class DataSeeder implements CommandLineRunner {
         this.alunos = alunos;
         this.encoder = encoder;
         this.senha = senha;
+        this.environment = environment;
+    }
+
+    @PostConstruct
+    void validarPerfil() {
+        if (environment.acceptsProfiles(Profiles.of("prod"))) {
+            throw new IllegalStateException("A carga de demonstração não pode ser executada no perfil prod");
+        }
     }
 
     @Override

@@ -65,6 +65,11 @@ public class DiarioService {
         if (!matriculados.containsAll(ids)) {
             throw new RegraNegocioException("Todos os alunos da chamada devem ter matrícula ativa na turma");
         }
+        Set<Long> todosMatriculados = matriculas.findByTurmaIdAndAtivaTrue(request.turmaId())
+                .stream().map(matricula -> matricula.getAluno().getId()).collect(Collectors.toSet());
+        if (!ids.containsAll(todosMatriculados)) {
+            throw new RegraNegocioException("A chamada deve incluir todos os alunos com matrícula ativa na turma");
+        }
 
         Chamada chamada = chamadas.saveAndFlush(Chamada.builder()
                 .turma(vinculo.turma()).disciplina(vinculo.disciplina()).dataAula(request.dataAula()).build());
@@ -89,10 +94,12 @@ public class DiarioService {
 
     @Transactional
     public NotaResponse lancarNota(Long avaliacaoId, NotaRequest request, UsuarioDetails usuario) {
+        Avaliacao consulta = avaliacoes.findById(avaliacaoId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Avaliação não encontrada"));
+        validarAcesso(consulta.getTurma().getId(), consulta.getDisciplina().getId(), usuario);
         // O lock da avaliação serializa a criação/atualização da mesma nota.
         Avaliacao avaliacao = avaliacoes.buscarParaAtualizacao(avaliacaoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Avaliação não encontrada"));
-        validarAcesso(avaliacao.getTurma().getId(), avaliacao.getDisciplina().getId(), usuario);
         Aluno aluno = alunos.findById(request.alunoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado"));
         if (!matriculas.existsByAlunoIdAndTurmaIdAndAtivaTrue(aluno.getId(), avaliacao.getTurma().getId())) {
@@ -102,7 +109,7 @@ public class DiarioService {
             throw new RegraNegocioException("A nota não pode ser maior que a nota máxima da avaliação");
         }
 
-        Nota nota = notas.findByAvaliacaoAndAluno(avaliacao, aluno)
+        Nota nota = notas.buscarParaAtualizacao(avaliacao, aluno)
                 .orElseGet(() -> Nota.builder().avaliacao(avaliacao).aluno(aluno).build());
         nota.setValor(request.valor());
         return NotaResponse.from(notas.saveAndFlush(nota));

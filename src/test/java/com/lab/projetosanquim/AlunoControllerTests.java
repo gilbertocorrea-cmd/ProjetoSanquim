@@ -16,6 +16,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Clock;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AlunoControllerTests {
     @Autowired private MockMvc mvc;
+    @Autowired private Clock clock;
     @Autowired private ObjectMapper mapper;
     @Autowired private AlunoRepository alunos;
     @Autowired private UsuarioRepository usuarios;
@@ -104,7 +106,7 @@ class AlunoControllerTests {
         avaliacao(turmaAntiga, matematica, "Sem nota na turma antiga", "10", "1");
         nota(perfilB, avaliacao(turmaB, matematica, "Só do B", "10", "1"), "3");
 
-        LocalDate hoje = LocalDate.now();
+        LocalDate hoje = LocalDate.now(clock);
         Chamada primeiraChamada = chamada(turmaA, matematica, hoje.minusDays(3));
         frequencia(perfilA, primeiraChamada, true);
         frequencia(perfilB, primeiraChamada, false);
@@ -187,7 +189,7 @@ class AlunoControllerTests {
         JsonNode response = consultar("/aulas", alunoA);
         assertThat(response.size()).isEqualTo(3);
         assertThat(response.get(0).get("id").asLong()).isEqualTo(ultimoPlanoHoje);
-        assertThat(response.get(0).get("dataAula").asString()).isEqualTo(LocalDate.now().toString());
+        assertThat(response.get(0).get("dataAula").asString()).isEqualTo(LocalDate.now(clock).toString());
         assertThat(response.toString()).doesNotContain("Aula futura", "exclusivo do B", "matrícula inativa");
     }
 

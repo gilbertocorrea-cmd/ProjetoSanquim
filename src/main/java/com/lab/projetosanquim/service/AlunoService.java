@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.math.MathContext;
 import java.time.LocalDate;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ public class AlunoService {
     private final PlanoAulaRepository planos;
     private final NotaRepository notas;
     private final AvaliacaoRepository avaliacoes;
+    private final Clock clock;
 
     @Transactional
     public AlunoResponse cadastrarAluno(AlunoRequest request) {
@@ -97,7 +99,7 @@ public class AlunoService {
 
     public List<AulaResponse> aulas(UsuarioDetails usuario) {
         Aluno aluno = buscarAlunoLogado(usuario);
-        return planos.consultarDoAluno(aluno.getId(), LocalDate.now()).stream().map(AulaResponse::from).toList();
+        return planos.consultarDoAluno(aluno.getId(), LocalDate.now(clock)).stream().map(AulaResponse::from).toList();
     }
 
     private Aluno buscarAlunoLogado(UsuarioDetails usuario) {

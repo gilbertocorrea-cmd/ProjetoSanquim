@@ -11,6 +11,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +35,14 @@ public class DiarioDataSeeder implements CommandLineRunner {
     private final AvaliacaoRepository avaliacoes;
     private final NotaRepository notas;
     private final DiarioService diario;
+    private final Environment environment;
+
+    @PostConstruct
+    void validarPerfil() {
+        if (environment.acceptsProfiles(Profiles.of("prod"))) {
+            throw new IllegalStateException("A carga de demonstração não pode ser executada no perfil prod");
+        }
+    }
 
     @Override
     @Transactional
