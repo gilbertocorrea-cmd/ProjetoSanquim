@@ -312,7 +312,7 @@ Os cenários opcionais com MySQL exigem configuração de ambiente específica. 
 | **Pedro Machado** | [@Pedrophobia](https://github.com/Pedrophobia) |
 | **Pedro Stefanin** | [@P3dr06](https://github.com/P3dr06) |
 
-> **EQUIPE:** integrantes informados para o projeto. As responsabilidades individuais não foram especificadas.
+> **EQUIPE:** integrantes informados para o projeto.
 
 ---
 
