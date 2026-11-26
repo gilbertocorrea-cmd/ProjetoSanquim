@@ -4,7 +4,7 @@
 
 <div align="center">
     
-# S A N Q U I M　//　S C H O O L　A P I
+# S A N Q U I M　//　S C H O O L　A P I 
 
 ### `JAVA • SPRING BOOT • REST API • SECURITY • MYSQL`
 
